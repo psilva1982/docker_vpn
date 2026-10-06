@@ -1,9 +1,10 @@
-# Servidores VPN com Docker Compose
+# Servidores VPN e proxy com Docker Compose
 
-Este repositório reúne duas implantações independentes de VPN em contêineres:
+Este repositório reúne implantações independentes em contêineres:
 
 - [WireGuard](wireguard/README.md), exposto em UDP `51820`;
-- [OpenVPN](openvpn/README.md), exposto em UDP `1194`.
+- [OpenVPN](openvpn/README.md), exposto em UDP `1194`;
+- [Proxy Squid](proxy/README.md), exposto em TCP `3128`, com ou sem autenticação.
 
 Cada diretório pode ser operado isoladamente. Consulte o README do serviço antes de alterar perfis, capabilities, portas ou regras de rede.
 
@@ -43,8 +44,23 @@ docker compose logs -f openvpn
 
 Use `docker compose down` para interromper sem remover o estado persistido. `docker compose down -v` também remove o volume `openvpn-state` e deve ser usado somente quando essa remoção for intencional.
 
+## Proxy Squid
+
+O serviço está em `proxy/compose.yaml`. A variável `PROXY_MODE` escolhe o modo: `auth` (padrão, usuários HTTP Basic em `proxy/artifacts/passwords`) ou `noauth` (proxy aberto para qualquer origem; restrinja pelo firewall).
+
+```sh
+cd proxy
+docker compose config
+docker compose build
+docker compose up -d                      # modo auth
+PROXY_MODE=noauth docker compose up -d    # modo sem autenticação
+docker compose logs -f proxy
+```
+
+A criação de usuários com `htpasswd` e os testes com `curl` estão em [proxy/README.md](proxy/README.md).
+
 ## Segurança
 
-Os arquivos em `artifacts/` podem conter chaves privadas e devem permanecer fora de commits, logs, tickets e mensagens. Mantenha as configurações WireGuard com permissão `0600` e distribua perfis de cliente apenas por canais confiáveis.
+Os arquivos em `artifacts/` podem conter chaves privadas e devem permanecer fora de commits, logs, tickets e mensagens. Mantenha as configurações WireGuard com permissão `0600` e distribua perfis de cliente apenas por canais confiáveis. O arquivo `proxy/artifacts/passwords` é ignorado pelo git e deve ficar com permissão `0600`.
 
 A autenticação OpenVPN incluída é exclusiva para testes; antes de qualquer uso em produção, implemente autenticação real e configure rotas, firewall e NAT de acordo com a infraestrutura.

@@ -1,1 +1,3 @@
 .serena
+proxy/artifacts/passwords
+proxy/.env
